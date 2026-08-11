@@ -1,17 +1,34 @@
 from datetime import datetime
 import json
-import os
 from google import genai
 from google.oauth2.service_account import Credentials
 import gspread
 import telebot
 
-# --- CONFIGURATION ---
-TELEGRAM_TOKEN = os.getenv('8880709004:AAEYoQ7RodhthUj_SrwQCrkOJ6eXo3Gp4N0')
-GEMINI_API_KEY = os.getenv('AQ.Ab8RN6ItA1ovWhUxHOjhNMJrA8RMFv85K3rqctnmO4bNSsVJZg')
+# --- DIRECT KEYS LOADED (No environment variable lafda) ---
+TELEGRAM_TOKEN = '8880709004:AAEyOq7RodhthUj_SrwQCrkOJ6Exo3Gp4N0'
+GEMINI_API_KEY = 'AQ.Ab8RN6ItA1ovWhUxHOjhNMJrA8RMFv85K3rqctnmO4bNSsVJZg'
 
-# Render ke environment variable se JSON data uthayenge
-service_account_info = json.loads(os.getenv('GOOGLE_CREDENTIALS_JSON'))
+# Service Account credentials direct yahan daal diye hain
+service_account_info = {
+    'type': 'service_account',
+    'project_id': 'expance-tracker-505204',
+    'private_key_id': 'e501b7df8fc7372a0637da8e0f0702adf58b5a85',
+    'private_key': (
+        '-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQC+CzAq3lhQeaE8\np4CyqZeJgnuxqxNXKRF0VsndEPbtbx24t0dm6XZs8PRkna8orRBmDnP/TO4vFnpl\njWOv1vwXqjJxbh7pweYNB0hqM2QWf0G55t+v9kqUCVG+hd4PaGiY6IrvzcUYclh+\nAM9uTOW6KjnUkqc1LqCZHkuGrXUlqCLGZrTWVYl4l/3FImAJmIAN4YGd5cLj/zyL\nZknT1url3eoiytXkP24k302H5+PnYOnendjpQoutMzVwUEqNWX7vDb7/C5DhMviO\nJ0Y2Rww6idz0+kMKDIydc4tAAZXDcGJiq0mJ3iQs/1q/AKpDcW5oMtiriyqxGier\nl5kVWenTAgMBAAECggEALrScNWToqnqB/GCkOgSBCBwH303OloSy0/dCbDCvpwHA\nebWdeDbXUoXTYmj4c9Q4rARQUMWs4eix0wRxI/V/hidfd04bjdKIAdqw2tzfc8H5\nusD5Z4rtoD08GElZHktILZA1GSNmlZAAnJMBZ7fBW8Pl647RRjo74PW3lRVLLaIc\n4fV+4C/N7xyz0JKDp8ol4c61TkRojdpp1AnO1SPZf2/Q4xc8QElCWs4D4jQWnRWu\n99UMH7mTL0gDkaLJ+j9yzA38RGYm8/vwey30q6vLpg1lQa3jfkMwZYPSQYBLwEAW\nxeQR07Z7BwYpQwViD9rHzlw+iDhAV31aq0siGDpO5QKBgQDefcp5curAzY8bBC5x\nNbwBPhwEi3iZ0VtOFmYQxO3DL+4y4sPv5yqf+3+8W8eSngd70wUG8x1MeLDyglms\nutMY+1lFDKc8t5IFpPWxecFob0kL/gp+3ctMTJFDTMmsoMenZZxf2YnE9uCG2ROf\n2Kx8PEjdnFfDuw8Pd2e4HvHLrQKBgQDaql6YzbsIIo6UvZgNh8VbziopIIuFbgxm\ntJVeQmvFgPjPYw5KrZQLTDMXlAbv+LSTB+a797EoNV81i1OAG4lENWIflQngj9iW\nSyJ/8d0PkSi/XleLdb8tsVGLS/BkBUwPE73liTFy0yTrKhP22wA0eNNC+zGEi1my\nYhvIRek7fwKBgFpCl9B7UUcUXVjtclXVIcczRjSFzFBCgZMFPTTSX06O9EhKfIin\ntEAgzGpCpY0SdSDDs8dk+17Zm5dWUEDlrdv1o/qCLppQMnn9uPrd1RukAfNOhT2A\nhwgWC9xMm4hf1X9Qloa//sccDGxIRlDTmu3vmvPkiCpMiciRfU9RpnAlAoGBAKHT\n8Ip5x29v08G0xvFMh/03iPBDC77GARuJjfnigkv69SjWkF8oMyZhUHaksLWshEdE\nU7jMySmOxlWkNTncJyx5rZLeBB9TleE03eV+pDG/Jj7qnTOzArfYQRcsLk53tSB7\nZdCYRiZKqUn5LClHTtGGkiNCMBV94/YmsZT4WHIVAoGBAKyFMRhbchA3zgJ+hjjW\nIup2z3N+3Uqv96lIakSBn4j9VbdbgJCi2Ikul39yarBZWvwt1yob3JKSv4xIbpUG\nl6TY/jzttXu2GaIpTm7X4Nqaj06Zagc9oV1hnuuENb9a/2/2saYBTfsByxbvob1b\nMcawKX9DOv1FHncfFnjDmEUk\n-----END PRIVATE KEY-----\n'
+    ),
+    'client_email': (
+        'finance-bot@expance-tracker-505204.iam.gserviceaccount.com'
+    ),
+    'client_id': '117013801784257347009',
+    'auth_uri': 'https://accounts.google.com/o/oauth2/auth',
+    'token_uri': 'https://oauth2.googleapis.com/token',
+    'auth_provider_x509_cert_url': 'https://www.googleapis.com/oauth2/v1/certs',
+    'client_x509_cert_url': (
+        'https://www.googleapis.com/robot/v1/metadata/x509/finance-bot%40expance-tracker-505204.iam.gserviceaccount.com'
+    ),
+    'universe_domain': 'googleapis.com',
+}
 
 # Setup Clients
 bot = telebot.TeleBot(TELEGRAM_TOKEN)
