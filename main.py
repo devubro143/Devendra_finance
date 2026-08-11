@@ -1,17 +1,17 @@
 from datetime import datetime
+import json
 import os
 from google import genai
-from google.genai import types
 from google.oauth2.service_account import Credentials
 import gspread
 import telebot
 
 # --- CONFIGURATION ---
-TELEGRAM_TOKEN = '8880709004:AAEYoQ7RodhthUj_SrwQCrkOJ6eXo3Gp4N0'
-GEMINI_API_KEY = (
-    'AQ.Ab8RN6ItA1ovWhUxHOjhNMJrA8RMFv85K3rqctnmO4bNSsVJZg'  # aistudio.google.com se free milegi
-)
-SERVICE_ACCOUNT_FILE = 'service_account.json'
+TELEGRAM_TOKEN = os.getenv('8880709004:AAEYoQ7RodhthUj_SrwQCrkOJ6eXo3Gp4N0')
+GEMINI_API_KEY = os.getenv('AQ.Ab8RN6ItA1ovWhUxHOjhNMJrA8RMFv85K3rqctnmO4bNSsVJZg')
+
+# Render ke environment variable se JSON data uthayenge
+service_account_info = json.loads(os.getenv('GOOGLE_CREDENTIALS_JSON'))
 
 # Setup Clients
 bot = telebot.TeleBot(TELEGRAM_TOKEN)
@@ -24,8 +24,8 @@ scope = [
     'https://www.googleapis.com/auth/drive.file',
     'https://www.googleapis.com/auth/drive',
 ]
-creds = Credentials.from_service_account_file(
-    SERVICE_ACCOUNT_FILE, scopes=scope
+creds = Credentials.from_service_account_info(
+    service_account_info, scopes=scope
 )
 client_sheet = gspread.authorize(creds)
 sheet = client_sheet.open('Expense Tracker').sheet1
@@ -34,36 +34,26 @@ sheet = client_sheet.open('Expense Tracker').sheet1
 @bot.message_handler(func=lambda message: True)
 def chat_tracker(message):
   user_text = message.text.strip()
-
   try:
-    # Saara data sheet se utha lo taaki AI ko context mil jaye
     all_records = sheet.get_all_records()
-
-    # System prompt taki AI samajh jaye ki wo ek smart finance buddy hai
     prompt = f"""
         Tu ek smart, friendly aur Hinglish bolne wala personal finance assistant hai.
-        Yeh raha user ka abhi tak ka sara expense data (Google Sheet se):
+        Yeh raha user ka abhi tak ka sara expense data:
         {all_records}
-
         User ka message yeh hai: "{user_text}"
-
-        Tujhe decide karna hai:
-        1. Agar user koi naya kharcha add kar raha hai (jaise "28 milk", "chai ke liye 50 diye"), toh usko extract karke sirf is format mein return kar: ADD|Amount|Category (Example: ADD|28|milk). Kuch aur mat likhna.
-        2. Agar user koi sawal puch raha hai (jaise "dudh par kitna kharcha hua?", "is hafte kitna udaya?"), toh upar diye hue data ko analyze kar aur ekdam mast, friendly Hinglish/Hindi mein jawab de.
+        1. Agar naya kharcha ho toh return kar: ADD|Amount|Category (Example: ADD|28|milk). Kuch aur mat likhna.
+        2. Agar sawal ho toh friendly Hinglish mein jawab de.
         """
-
     response = client_ai.models.generate_content(
         model='gemini-2.5-flash', contents=prompt
     )
     ai_reply = response.text.strip()
 
-    # Agar AI ne expense add karne ka bola hai
     if ai_reply.startswith('ADD|'):
       parts = ai_reply.split('|')
       amount = parts[1]
       category = parts[2]
       date = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-
       sheet.append_row([date, amount, category])
       bot.reply_to(
           message,
@@ -71,30 +61,12 @@ def chat_tracker(message):
           ' mein. 🚀',
       )
     else:
-      # Normal chat / query ka jawab jo AI ne diya hai
       bot.reply_to(message, ai_reply)
-
   except Exception as e:
-    # Fallback agar seedha simple format mein bheja ho
-    try:
-      parts = user_text.split(' ', 1)
-      if parts[0].isdigit():
-        amount = parts[0]
-        category = parts[1] if len(parts) > 1 else 'General'
-        date = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        sheet.append_row([date, amount, category])
-        bot.reply_to(
-            message, f'✅ Saved: ₹{amount} for {category} (Fallback mode)'
-        )
-      else:
-        bot.reply_to(
-            message,
-            'Bhai kuch samajh nahi aaya, thoda clearly likh ya dobara try kar!',
-        )
-    except:
-      bot.reply_to(
-          message, '❌ Error aa gaya bhai, code ya format check kar.'
-      )
+    bot.reply_to(
+        message,
+        '❌ Kuch gadbad ho gayi bhai, dobara try kar ya format check kar.',
+    )
 
 
 bot.infinity_polling()
